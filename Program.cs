@@ -1,12 +1,7 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
-using System.IO;
-using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 class Program
 {
