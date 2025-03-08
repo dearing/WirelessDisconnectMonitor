@@ -58,20 +58,6 @@ Once launched, the application runs in the background, monitoring your wireless 
 - Configure notification settings
 - Export logs for analysis
 
-## Configuration
-
-Configuration options are available in `appsettings.json`:
-
-- Logging level and output locations
-- Notification thresholds
-- Network interfaces to monitor
-
-## Project Structure
-
-- `src/` - Source code files
-- `docs/` - Documentation
-- `tests/` - Test projects
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
