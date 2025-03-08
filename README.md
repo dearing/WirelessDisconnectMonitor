@@ -39,6 +39,11 @@ WirelessDisconnectMonitor is a .NET application designed to track and analyze wi
    dotnet run --project WirelessDisconnectMonitor
    ```
 
+4. Publish the application:
+   ```
+   dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true
+   ```
+
 ## Usage
 
 Once launched, the application runs in the background, monitoring your wireless connections. The system tray icon provides access to:
