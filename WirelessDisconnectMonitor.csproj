@@ -5,7 +5,7 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <ApplicationIcon>wifi_icon.ico</ApplicationIcon>
+    <!-- <ApplicationIcon>wifi_icon.ico</ApplicationIcon> -->
     
     <!-- Version information -->
     <Version>1.1.0</Version>
