@@ -31,7 +31,12 @@ class Program
             return; // Exit immediately
         }
 
-        Console.WriteLine("=== WiFi Disconnect Monitor ===");
+        // Get application version
+        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        var fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+        var version = fileVersionInfo.ProductVersion ?? "1.0.0";
+
+        Console.WriteLine($"=== WiFi Disconnect Monitor v{version} ===");
         Console.WriteLine($"Logs will be saved to: {LogFile}");
 
         // Initial log entry
@@ -349,8 +354,14 @@ class Program
 
             using var writer = new StreamWriter(reportFile);
 
+            // Get application version
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+            var version = fileVersionInfo.ProductVersion ?? "1.0.0";
+
             // Write header
             await writer.WriteLineAsync("=== WiFi Disconnect Monitor Report ===");
+            await writer.WriteLineAsync($"Version: {version}");
             await writer.WriteLineAsync($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             await writer.WriteLineAsync($"Monitoring period: {_startTime:yyyy-MM-dd HH:mm:ss} - {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             await writer.WriteLineAsync("=================================");
