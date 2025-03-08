@@ -21,21 +21,7 @@ class Program
 
     static async Task Main(string[] args)
     {
-        // Check if running on Windows
-        if (!OperatingSystem.IsWindows())
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Error: This application only runs on Windows.");
-            Console.WriteLine("WiFi Disconnect Monitor requires Windows-specific features to function properly.");
-            Console.ResetColor();
-            return; // Exit immediately
-        }
-
-        // Get application version
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-        var fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
-        var version = fileVersionInfo.ProductVersion ?? "1.0.0";
-
+        var version = "1.1.1";
         Console.WriteLine($"=== WiFi Disconnect Monitor v{version} ===");
         Console.WriteLine($"Logs will be saved to: {LogFile}");
 

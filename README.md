@@ -23,8 +23,8 @@ WirelessDisconnectMonitor is a .NET Windows application designed to track and an
 
 ### Prerequisites
 
-- .NET 6.0 or higher
-- Windows operating system (for full functionality)
+- Windows operating system
+- .NET 8.0 Runtime
 
 ### Installation
 
@@ -65,4 +65,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
