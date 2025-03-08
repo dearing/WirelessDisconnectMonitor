@@ -1,10 +1,15 @@
 # WirelessDisconnectMonitor
 
-A utility application that monitors and logs wireless network disconnections, helping to diagnose connectivity issues.
+A Windows utility application that monitors and logs wireless network disconnections, helping to diagnose connectivity issues.
 
 ## Overview
 
-WirelessDisconnectMonitor is a .NET application designed to track and analyze wireless network disconnection events. It helps users identify patterns and potential causes of wireless connectivity problems by monitoring network status and recording details about disconnection events.
+WirelessDisconnectMonitor is a .NET Windows application designed to track and analyze wireless network disconnection events. It helps users identify patterns and potential causes of wireless connectivity problems by monitoring network status and recording details about disconnection events.
+
+## System Requirements
+
+- Windows 10 or later
+- .NET 8.0 Runtime
 
 ## Features
 

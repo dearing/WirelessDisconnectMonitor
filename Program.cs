@@ -21,6 +21,16 @@ class Program
 
     static async Task Main(string[] args)
     {
+        // Check if running on Windows
+        if (!OperatingSystem.IsWindows())
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Error: This application only runs on Windows.");
+            Console.WriteLine("WiFi Disconnect Monitor requires Windows-specific features to function properly.");
+            Console.ResetColor();
+            return; // Exit immediately
+        }
+
         Console.WriteLine("=== WiFi Disconnect Monitor ===");
         Console.WriteLine($"Logs will be saved to: {LogFile}");
 
@@ -190,38 +200,11 @@ class Program
                 {
                     LogMessage("Collecting recent event logs...");
 
-                    // EventLogQuery is only supported on Windows
-                    if (!OperatingSystem.IsWindows())
-                    {
-                        LogMessage("Event log collection is only supported on Windows.");
-                        continue;
-                    }
+                    // Collect WiFi/networking related events
+                    await CollectNetworkEventLogsAsync();
 
-                    // Look for Wlan (WiFi) related events in the last 15 minutes
-                    DateTime checkFrom = DateTime.Now.AddMinutes(-15);
-                    var query = new EventLogQuery("System", PathType.LogName,
-                        $"*[System[(Provider[@Name='Wlansvc'] or Provider[@Name='NETwNs64'] or Provider[@Name='Microsoft-Windows-WLAN-AutoConfig'])" +
-                        $" and TimeCreated[timediff(@SystemTime) <= {(long)TimeSpan.FromMinutes(15).TotalMilliseconds}]]]");
-
-                    var reader = new EventLogReader(query);
-                    int count = 0;
-
-                    for (EventRecord entry = reader.ReadEvent(); entry != null; entry = reader.ReadEvent())
-                    {
-                        try
-                        {
-                            LogMessage($"Event Log: [{entry.LevelDisplayName}] " +
-                                      $"{entry.TimeCreated:yyyy-MM-dd HH:mm:ss} " +
-                                      $"{entry.ProviderName} - {entry.Id}: {entry.FormatDescription()}");
-                            count++;
-                        }
-                        catch (Exception ex)
-                        {
-                            LogMessage($"Error reading event: {ex.Message}");
-                        }
-                    }
-
-                    LogMessage($"Collected {count} WiFi-related events");
+                    // Collect hardware related events
+                    await CollectHardwareEventLogsAsync();
                 }
             }
             catch (OperationCanceledException)
@@ -232,6 +215,125 @@ class Program
             {
                 LogMessage($"Error collecting event logs: {ex.Message}");
             }
+        }
+    }
+
+    private static async Task CollectNetworkEventLogsAsync()
+    {
+        try
+        {
+            // Look for Wlan (WiFi) related events in the last 15 minutes
+            var query = new EventLogQuery("System", PathType.LogName,
+                $"*[System[(Provider[@Name='Wlansvc'] or Provider[@Name='NETwNs64'] or " +
+                $"Provider[@Name='Microsoft-Windows-WLAN-AutoConfig'] or Provider[@Name='Tcpip'] or " +
+                $"Provider[@Name='Microsoft-Windows-NetworkProfile'])" +
+                $" and TimeCreated[timediff(@SystemTime) <= {(long)TimeSpan.FromMinutes(15).TotalMilliseconds}]]]");
+
+            var reader = new EventLogReader(query);
+            int count = 0;
+
+            for (EventRecord entry = reader.ReadEvent(); entry != null; entry = reader.ReadEvent())
+            {
+                try
+                {
+                    LogMessage($"Network Event: [{entry.LevelDisplayName}] " +
+                              $"{entry.TimeCreated:yyyy-MM-dd HH:mm:ss} " +
+                              $"{entry.ProviderName} - {entry.Id}: {entry.FormatDescription()}");
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    LogMessage($"Error reading network event: {ex.Message}");
+                }
+            }
+
+            LogMessage($"Collected {count} network-related events");
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Error collecting network events: {ex.Message}");
+        }
+    }
+
+    private static async Task CollectHardwareEventLogsAsync()
+    {
+        try
+        {
+            // Sources for hardware events
+            var hardwareSources = new[] {
+                // General hardware sources
+                "Microsoft-Windows-Kernel-PnP",
+                "Microsoft-Windows-DeviceSetupManager",
+                "Microsoft-Windows-Kernel-Power",
+                "Microsoft-Windows-Power-Troubleshooter",
+                
+                // WiFi adapter specific
+                "Microsoft-Windows-WLAN-Driver",
+                "Microsoft-Windows-NDIS",
+                "NDIS",
+                
+                // USB related (in case of USB WiFi adapters)
+                "Microsoft-Windows-USB-USBHUB",
+                "Microsoft-Windows-USB-USBPORT"
+            };
+
+            var sourceClause = string.Join(" or ", hardwareSources.Select(s => $"Provider[@Name='{s}']"));
+            var query = new EventLogQuery("System", PathType.LogName,
+                $"*[System[({sourceClause}) and (Level=1 or Level=2 or Level=3)" +
+                $" and TimeCreated[timediff(@SystemTime) <= {(long)TimeSpan.FromMinutes(15).TotalMilliseconds}]]]");
+
+            var reader = new EventLogReader(query);
+            int count = 0;
+
+            for (EventRecord entry = reader.ReadEvent(); entry != null; entry = reader.ReadEvent())
+            {
+                try
+                {
+                    if (IsRelevantHardwareEvent(entry))
+                    {
+                        LogMessage($"Hardware Event: [{entry.LevelDisplayName}] " +
+                                  $"{entry.TimeCreated:yyyy-MM-dd HH:mm:ss} " +
+                                  $"{entry.ProviderName} - {entry.Id}: {entry.FormatDescription()}");
+                        count++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogMessage($"Error reading hardware event: {ex.Message}");
+                }
+            }
+
+            LogMessage($"Collected {count} hardware-related events");
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Error collecting hardware events: {ex.Message}");
+        }
+    }
+
+    private static bool IsRelevantHardwareEvent(EventRecord entry)
+    {
+        // Filter for relevant hardware events
+        try
+        {
+            // Always include errors and warnings
+            if (entry.Level <= 3) // 1=Critical, 2=Error, 3=Warning
+                return true;
+
+            // Consider the event description - look for keywords that might indicate WiFi issues
+            string desc = entry.FormatDescription()?.ToLower() ?? "";
+            string[] relevantKeywords = new[] {
+                "wifi", "wireless", "wlan", "802.11", "network adapter",
+                "disconnect", "connect", "power", "sleep", "restart",
+                "driver", "hardware", "device", "failed", "error"
+            };
+
+            return relevantKeywords.Any(keyword => desc.Contains(keyword));
+        }
+        catch
+        {
+            // If we can't analyze it, include it to be safe
+            return true;
         }
     }
 
@@ -298,6 +400,21 @@ class Program
 
             await writer.WriteLineAsync("\n-- PING TEST --");
             await RunCommandAndLogOutput("ping", "8.8.8.8 -n 4", writer);
+
+            // Add hardware info
+            await writer.WriteLineAsync("\n=== HARDWARE INFORMATION ===");
+
+            // Device manager hardware info
+            await writer.WriteLineAsync("\n-- NETWORK ADAPTER DETAILS --");
+            await RunCommandAndLogOutput("powershell", "-Command \"Get-NetAdapter | Format-List *\"", writer);
+
+            // Driver information
+            await writer.WriteLineAsync("\n-- NETWORK DRIVER DETAILS --");
+            await RunCommandAndLogOutput("powershell", "-Command \"Get-NetAdapter | Get-NetAdapterAdvancedProperty | Format-Table -AutoSize\"", writer);
+
+            // Check for driver issues
+            await writer.WriteLineAsync("\n-- PROBLEM DEVICES --");
+            await RunCommandAndLogOutput("powershell", "-Command \"Get-WmiObject Win32_PnPEntity | Where-Object{$_.ConfigManagerErrorCode -ne 0} | Select-Object Name, DeviceID, ConfigManagerErrorCode | Format-List\"", writer);
 
             // Include the full log
             await writer.WriteLineAsync("\n=== DISCONNECT LOG ===");
